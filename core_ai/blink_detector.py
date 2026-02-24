@@ -29,11 +29,17 @@ class BlinkDetector:
         ear_threshold=0.21,
         consec_frames=2,
         ear_window=3,
-        reopen_margin=0.03
+        reopen_margin=0.03,
+        baseline_alpha=0.08,
+        drop_margin=0.04,
+        min_baseline=0.18
     ):
         self.ear_threshold = ear_threshold
         self.consec_frames = consec_frames
         self.reopen_margin = reopen_margin
+        self.baseline_alpha = baseline_alpha
+        self.drop_margin = drop_margin
+        self.min_baseline = min_baseline
 
         # Temporal state
         self._closed_counter = 0
@@ -41,6 +47,9 @@ class BlinkDetector:
 
         # EAR smoothing buffer
         self._ear_buffer = deque(maxlen=ear_window)
+
+        # Adaptive open-eye baseline
+        self._baseline_ear = None
 
     @staticmethod
     def _euclidean(p1, p2):
@@ -74,6 +83,16 @@ class BlinkDetector:
         self._ear_buffer.append(ear)
         return sum(self._ear_buffer) / len(self._ear_buffer)
 
+    def _update_baseline(self, ear):
+        if self._baseline_ear is None:
+            self._baseline_ear = ear
+            return
+
+        alpha = self.baseline_alpha
+        self._baseline_ear = (1.0 - alpha) * self._baseline_ear + alpha * ear
+        if self._baseline_ear < self.min_baseline:
+            self._baseline_ear = self.min_baseline
+
     def update(self, landmarks):
         """
         Returns: BlinkState
@@ -82,8 +101,19 @@ class BlinkDetector:
         if ear is None:
             return BlinkState.NO_BLINK
 
+        # Update baseline only when eyes appear open enough
+        if ear > self.ear_threshold + self.reopen_margin:
+            self._update_baseline(ear)
+
+        dynamic_threshold = self.ear_threshold
+        if self._baseline_ear is not None:
+            dynamic_threshold = max(
+                self.ear_threshold,
+                self._baseline_ear - self.drop_margin
+            )
+
         # Eye closed
-        if ear < self.ear_threshold:
+        if ear < dynamic_threshold:
             self._closed_counter += 1
 
             if self._closed_counter >= self.consec_frames and not self._blink_active:
@@ -93,7 +123,7 @@ class BlinkDetector:
             return BlinkState.NO_BLINK
 
         # Eye reopened clearly (anti-squint)
-        if ear > self.ear_threshold + self.reopen_margin:
+        if ear > dynamic_threshold + self.reopen_margin:
             self._closed_counter = 0
             self._blink_active = False
 
