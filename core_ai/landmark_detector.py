@@ -1,5 +1,3 @@
-# core_ai/landmark_detector.py
-
 import cv2
 import mediapipe as mp
 
@@ -16,7 +14,7 @@ class LandmarkDetector:
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             static_image_mode=False,
             max_num_faces=1,
-            refine_landmarks=False,  # keep lightweight
+            refine_landmarks=True,  # iris landmarks enabled
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
         )
@@ -25,7 +23,7 @@ class LandmarkDetector:
         """
         frame: BGR image
         bbox: (x, y, w, h)
-        returns: list[(x, y)] of 468 landmarks in image coords
+        returns: list[(x, y)] of 478 landmarks in image coords
         """
 
         x, y, w, h = bbox
@@ -44,7 +42,6 @@ class LandmarkDetector:
         if roi.size == 0:
             return None
 
-        # MediaPipe expects RGB
         rgb = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)
 
         results = self.face_mesh.process(rgb)
