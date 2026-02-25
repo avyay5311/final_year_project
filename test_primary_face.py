@@ -17,8 +17,8 @@ from core_ai.headpose_detector import HeadPoseDetector, HeadPoseState
 
 from identity.calibration_prompt import run_initial_calibration
 from channels.gaze_channel import GazeChannel
-
-
+from channels.blink_channel import BlinkChannel
+from channels.headpose_channel import HeadPoseChannel
 # -------------------------------------------------
 # Configuration
 # -------------------------------------------------
@@ -61,6 +61,8 @@ gaze = GazeTracking(
 )
 
 gaze_channel = GazeChannel()  # ✅ Behavior Channel
+blink_channel = BlinkChannel()
+headpose_channel = HeadPoseChannel()
 
 headpose_detector = HeadPoseDetector(
     yaw_thresh=8.0,
@@ -72,7 +74,8 @@ headpose_detector = HeadPoseDetector(
 )
 
 cap = cv2.VideoCapture(0)
-
+# print("Frame width:", cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+# print("Frame height:", cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 if not cap.isOpened():
     print("ERROR: Camera not opened")
     raise SystemExit
@@ -179,6 +182,13 @@ try:
             identity_valid=identity_valid_for_behavior
         )
 
+        #update blink channel every frame as well, with same identity validity check
+        blink_channel.update(
+            blink_state=blink_state,
+            identity_valid=identity_valid_for_behavior
+        )
+
+
         # -------------------------------------------------
         # Status Mapping (Preserved)
         # -------------------------------------------------
@@ -235,6 +245,8 @@ finally:
 
     gaze_channel.finalize()
 
+    blink_channel.finalize()
+    headpose_channel.finalize()
     summary = gaze_channel.get_summary()
 
     os.makedirs("summaries", exist_ok=True)
@@ -242,7 +254,17 @@ finally:
     with open("summaries/gaze_summary.json", "w") as f:
         json.dump(summary, f, indent=4)
 
+    blink_summary = blink_channel.get_summary()
+    with open("summaries/blink_summary.json", "w") as f:
+        json.dump(blink_summary, f, indent=4)
+    
+    headpose_summary = headpose_channel.get_summary()
+    with open("summaries/headpose_summary.json", "w") as f:
+        json.dump(headpose_summary, f, indent=4)
+    
     cap.release()
     cv2.destroyAllWindows()
 
     print("Gaze summary saved to summaries/gaze_summary.json")
+    print("Blink summary saved to summaries/blink_summary.json")
+    print("Headpose summary saved to summaries/headpose_summary.json")
