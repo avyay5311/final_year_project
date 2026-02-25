@@ -1,4 +1,6 @@
 import cv2
+import json
+import os
 
 from core_ai.dnn_face_source import DNNFaceSource
 from core_ai.face_tracker import FaceTracker
@@ -11,8 +13,10 @@ from core_ai.primary_identity_sm import (
 from core_ai.landmark_detector import LandmarkDetector
 from core_ai.blink_detector import BlinkDetector, BlinkState
 from core_ai.gaze_tracking import GazeTracking
+from core_ai.headpose_detector import HeadPoseDetector, HeadPoseState
 
 from identity.calibration_prompt import run_initial_calibration
+from channels.gaze_channel import GazeChannel
 
 
 # -------------------------------------------------
@@ -48,13 +52,23 @@ blink_detector = BlinkDetector(
     consec_frames=2
 )
 
-# Balanced gaze detector
 gaze = GazeTracking(
     smoothing_window=5,
     min_stable_frames=3,
     min_face_width=MIN_FACE_WIDTH,
     horizontal_thresh=0.06,
     vertical_thresh=0.06,
+)
+
+gaze_channel = GazeChannel()  # ✅ Behavior Channel
+
+headpose_detector = HeadPoseDetector(
+    yaw_thresh=8.0,
+    pitch_thresh=8.0,
+    hysteresis=2.0,
+    smoothing_window=4,
+    min_stable_frames=3,
+    min_face_width=MIN_FACE_WIDTH
 )
 
 cap = cv2.VideoCapture(0)
@@ -76,7 +90,7 @@ calibrated = run_initial_calibration(
     identity_sm=identity_sm,
     landmark_detector=landmark_detector,
     suppress_duplicates=suppress_duplicates,
-    window_name="Primary Identity + Gaze Test",
+    window_name="Primary Identity + Gaze + HeadPose Test",
 )
 
 if not calibrated:
@@ -86,85 +100,149 @@ if not calibrated:
 
 
 # -------------------------------------------------
-# Main loop
+# Main Loop (Graceful Shutdown Enabled)
 # -------------------------------------------------
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+try:
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-    # Face detection + tracking
-    detections = face_source.get_faces(frame)
-    face_states = tracker.update(detections)
-    face_states = suppress_duplicates(face_states)
+        detections = face_source.get_faces(frame)
+        face_states = tracker.update(detections)
+        face_states = suppress_duplicates(face_states)
 
-    identity_state, primary_face = identity_sm.update(frame, face_states)
+        identity_state, primary_face = identity_sm.update(frame, face_states)
 
-    gaze_label = "NO_PUPILS"
-    blink_state = BlinkState.NO_BLINK
+        gaze_label = "NO_PUPILS"
+        blink_state = BlinkState.NO_BLINK
+        headpose_state = HeadPoseState.HEAD_CENTER
 
-    # -------------------------------------------------
-    # Run detection only when identity confirmed
-    # -------------------------------------------------
+        # -------------------------------------------------
+        # Run detection when behavior-valid identity
+        # -------------------------------------------------
 
-    if primary_face is not None and identity_state in (
-        IdentityState.PRIMARY_CONFIRMED,
-        IdentityState.PRIMARY_REACQUIRED,
-    ):
+        if (
+            primary_face is not None
+            and identity_state not in (
+                IdentityState.PRIMARY_TEMP_ABSENT,
+                IdentityState.IMPERSONATION_SUSPECT,
+                IdentityState.MULTIPLE_FACES_PRESENT,
+            )
+        ):
 
-        landmarks = landmark_detector.detect(frame, primary_face["bbox"])
+            landmarks = landmark_detector.detect(frame, primary_face["bbox"])
 
-        if landmarks is not None:
-            x, y, w, h = primary_face["bbox"]
+            if landmarks is not None:
+                x, y, w, h = primary_face["bbox"]
 
-            # Gaze
-            gaze.refresh(frame, landmarks, face_width=w)
-            gaze_label = gaze.stable_state()
+                # -------------------------
+                # Gaze
+                # -------------------------
+                gaze.refresh(frame, landmarks, face_width=w)
+                gaze_label = gaze.stable_state()
 
-            # Blink (distance-aware)
-            if w >= MIN_FACE_WIDTH:
-                ear = blink_detector.compute_ear(landmarks)
-                if ear is not None:
-                    blink_state = blink_detector.update(landmarks)
+                # -------------------------
+                # Blink
+                # -------------------------
+                if w >= MIN_FACE_WIDTH:
+                    ear = blink_detector.compute_ear(landmarks)
+                    if ear is not None:
+                        blink_state = blink_detector.update(landmarks)
 
-    # -------------------------------------------------
-    # Status Mapping
-    # -------------------------------------------------
+                # -------------------------
+                # Head Pose
+                # -------------------------
+                headpose_state = headpose_detector.update(
+                    landmarks=landmarks,
+                    face_width=w,
+                    frame_shape=frame.shape
+                )
 
-    if identity_state in (
-        IdentityState.PRIMARY_CONFIRMED,
-        IdentityState.PRIMARY_REACQUIRED,
-    ):
-        status = "PRIMARY_PRESENT"
-    elif identity_state == IdentityState.PRIMARY_TEMP_ABSENT:
-        status = "NO_FACE"
-    elif identity_state == IdentityState.PRIMARY_TEMP_UNCERTAIN:
-        status = "PRIMARY_UNCERTAIN"
-    elif identity_state == IdentityState.IMPERSONATION_SUSPECT:
-        status = "IMPERSONATION_SUSPECT"
-    else:
-        status = identity_state.value
+        # -------------------------------------------------
+        # Identity validity for behavior channel
+        # -------------------------------------------------
 
-    # -------------------------------------------------
-    # Visualization
-    # -------------------------------------------------
+        identity_valid_for_behavior = (
+            primary_face is not None
+            and identity_state not in (
+                IdentityState.PRIMARY_TEMP_ABSENT,
+                IdentityState.MULTIPLE_FACES_PRESENT,
+                IdentityState.IMPERSONATION_SUSPECT,
+            )
+        )
 
-    cv2.putText(frame, f"STATUS: {status}", (20, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        # ✅ Update Gaze Channel Every Frame
+        gaze_channel.update(
+            gaze_state=gaze_label,
+            identity_valid=identity_valid_for_behavior
+        )
 
-    cv2.putText(frame, f"GAZE: {gaze_label}", (20, 60),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+        # -------------------------------------------------
+        # Status Mapping (Preserved)
+        # -------------------------------------------------
 
-    if blink_state == BlinkState.BLINK:
-        cv2.putText(frame, "BLINK", (20, 90),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+        if identity_state in (
+            IdentityState.PRIMARY_CONFIRMED,
+            IdentityState.PRIMARY_REACQUIRED,
+        ):
+            status = "PRIMARY_PRESENT"
+        elif identity_state == IdentityState.PRIMARY_TEMP_ABSENT:
+            status = "NO_FACE"
+        elif identity_state == IdentityState.PRIMARY_TEMP_UNCERTAIN:
+            status = "PRIMARY_UNCERTAIN"
+        elif identity_state == IdentityState.IMPERSONATION_SUSPECT:
+            status = "IMPERSONATION_SUSPECT"
+        else:
+            status = identity_state.value
 
-    cv2.imshow("Primary Identity + Gaze Test", frame)
+        # -------------------------------------------------
+        # Visualization (ALL PRESERVED)
+        # -------------------------------------------------
 
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
+        cv2.putText(frame, f"STATUS: {status}", (20, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
+        cv2.putText(frame, f"GAZE: {gaze_label}", (20, 60),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
-cap.release()
-cv2.destroyAllWindows()
+        if blink_state == BlinkState.BLINK:
+            cv2.putText(frame, "BLINK", (20, 90),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+
+        cv2.putText(frame, f"HEAD: {headpose_state.value}", (20, 120),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+                    (0, 255, 0) if headpose_state == HeadPoseState.HEAD_CENTER else (0, 0, 255),
+                    2)
+
+        cv2.putText(frame, f"Yaw: {headpose_detector.yaw:+.2f}", (20, 150),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+        cv2.putText(frame, f"Pitch: {headpose_detector.pitch:+.2f}", (20, 180),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+        cv2.imshow("Primary Identity + Gaze + HeadPose Test", frame)
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+except KeyboardInterrupt:
+    print("\nProgram interrupted by user (Ctrl+C).")
+
+finally:
+    print("Finalizing gaze behavior summary...")
+
+    gaze_channel.finalize()
+
+    summary = gaze_channel.get_summary()
+
+    os.makedirs("summaries", exist_ok=True)
+
+    with open("summaries/gaze_summary.json", "w") as f:
+        json.dump(summary, f, indent=4)
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+    print("Gaze summary saved to summaries/gaze_summary.json")
