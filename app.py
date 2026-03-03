@@ -427,11 +427,15 @@ def result():
     if report is None:
         return render_template('error.html', error="Report not found")
     
+    report_data = report['report_json']
+    flags = report_data.get('flags', [])
+    reasons = [f['type'] for f in flags if isinstance(f, dict) and 'type' in f]
+    
     return render_template('result.html',
                          username=session.get('username'),
                          integrity_score=report['integrity_score'],
                          risk_level=report['risk_level'],
-                         reasons=report['report_json'].get('reasons', []))
+                         reasons=reasons)
 
 
 # -------------------------------------------------

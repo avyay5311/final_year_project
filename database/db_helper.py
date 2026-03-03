@@ -1,13 +1,15 @@
 import mysql.connector
+from config import Config
+
 global cnx
 global isInserted
 
 #Create a connection to the database
 cnx = mysql.connector.connect(
-    host="localhost", 
-    user="root", 
-    password="Avyay5311@", 
-    database="quizo"
+    host=Config.DB_HOST,
+    user=Config.DB_USER,
+    password=Config.DB_PASSWORD,
+    database=Config.DB_NAME
 )
 
 def get_all_details():
@@ -48,7 +50,6 @@ def insert_signup(email, username, password):
         #Rollback changes if necessary
         cnx.rollback()
         return -1
-    return None
 
 def search_login_credentials(email, password):
     #Create a cursor object
@@ -77,10 +78,10 @@ import json
 def get_connection():
     """Create and return a new database connection."""
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Avyay5311@",
-        database="quizo"
+        host=Config.DB_HOST,
+        user=Config.DB_USER,
+        password=Config.DB_PASSWORD,
+        database=Config.DB_NAME
     )
 
 

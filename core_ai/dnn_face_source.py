@@ -1,6 +1,7 @@
 # core_ai/dnn_face_source.py
 
 import cv2
+import os
 import numpy as np
 from core_ai.face_source import FaceSource
 from core_ai.config import FACE_CONFIDENCE_THRESHOLD
@@ -8,6 +9,10 @@ from core_ai.config import FACE_CONFIDENCE_THRESHOLD
 
 class DNNFaceSource(FaceSource):
     def __init__(self, proto_path, model_path):
+        if not os.path.exists(proto_path):
+            raise FileNotFoundError(f"DNN prototxt not found: {proto_path}")
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"DNN model not found: {model_path}")
         self.net = cv2.dnn.readNetFromCaffe(proto_path, model_path)
 
     def get_faces(self, frame):

@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS quizo.integrity_reports (
     report_id INT PRIMARY KEY AUTO_INCREMENT,
     session_id INT NOT NULL,
     integrity_score INT NOT NULL,
-    risk_level ENUM('LOW', 'MEDIUM', 'HIGH') NOT NULL,
+    risk_level ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL') NOT NULL,
     report_json JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES exam_sessions(session_id) ON DELETE CASCADE

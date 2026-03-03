@@ -124,6 +124,9 @@ class ExamProctor:
         with open(os.path.join(Config.SUMMARIES_DIR, "mouth_summary.json"), "w") as f:
             json.dump(summaries['mouth'], f, indent=4)
         
+        with open(os.path.join(Config.SUMMARIES_DIR, "face_identity_summary.json"), "w") as f:
+            json.dump(summaries['face_identity'], f, indent=4)
+        
         print("Behavior summaries saved.")
         return True
 
