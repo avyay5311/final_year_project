@@ -3,7 +3,7 @@
 
 import os
 import json
-import time
+import uuid
 
 from config import Config
 from integrity_engine.integrity_engine import IntegrityEngine
@@ -36,13 +36,19 @@ def run_integrity_engine():
     mouth_summary = _load_summary("mouth_summary.json")
     face_identity_summary = _load_summary("face_identity_summary.json")
     
-    # Compute session duration from summaries (use gaze as source of truth)
-    session_duration = gaze_summary.get("session_duration", 0.0)
+    # Compute session duration from available summaries
+    session_duration = (
+        gaze_summary.get("session_duration")
+        or headpose_summary.get("session_duration")
+        or blink_summary.get("session_duration")
+        or mouth_summary.get("session_duration")
+        or 0.0
+    )
     
     # Run the integrity engine with the correct API
     engine = IntegrityEngine()
     report = engine.run(
-        session_id=f"session_{int(time.time())}",
+        session_id=f"session_{uuid.uuid4().hex[:8]}",
         session_duration=session_duration,
         gaze_summary=gaze_summary,
         headpose_summary=headpose_summary,
