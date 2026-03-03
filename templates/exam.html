@@ -1,0 +1,91 @@
+<!-- templates/exam.html -->
+<!-- Main exam page with proctoring -->
+{% extends 'base.html' %}
+
+{% block title %}Exam - Proctoring Active{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="exam-container">
+    <!-- Warning Bar -->
+    <div id="warning-bar" class="warning-bar hidden">
+        <span id="warning-message"></span>
+    </div>
+    
+    <!-- Header -->
+    <div class="exam-header">
+        <h1>Exam in Progress</h1>
+        <div class="header-right">
+            <span class="proctoring-status">
+                <span class="status-dot"></span>
+                Proctoring Active
+            </span>
+            <span class="username">{{ username }}</span>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="exam-content">
+        <!-- Camera Widget -->
+        <div class="camera-widget">
+            <h3>Camera Feed</h3>
+            <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Camera Feed">
+            <div class="camera-status">
+                <span id="camera-status-text">Camera Active</span>
+            </div>
+            <div class="identity-status" id="identity-status">
+                <span class="identity-indicator" id="identity-indicator">&#9679;</span>
+                <span id="identity-text">Verifying identity...</span>
+            </div>
+        </div>
+        
+        <!-- Exam Questions Area -->
+        <div class="exam-questions">
+            <h2>Sample Examination</h2>
+            <p class="exam-instructions">Answer all questions. Your activity is being monitored.</p>
+            
+            <div class="question">
+                <p class="question-text"><strong>Q1:</strong> This is a sample question. The actual exam content will be integrated here.</p>
+                <div class="options">
+                    <label><input type="radio" name="q1" value="a"> Option A</label>
+                    <label><input type="radio" name="q1" value="b"> Option B</label>
+                    <label><input type="radio" name="q1" value="c"> Option C</label>
+                    <label><input type="radio" name="q1" value="d"> Option D</label>
+                </div>
+            </div>
+            
+            <div class="question">
+                <p class="question-text"><strong>Q2:</strong> Another sample question for demonstration purposes.</p>
+                <div class="options">
+                    <label><input type="radio" name="q2" value="a"> Option A</label>
+                    <label><input type="radio" name="q2" value="b"> Option B</label>
+                    <label><input type="radio" name="q2" value="c"> Option C</label>
+                    <label><input type="radio" name="q2" value="d"> Option D</label>
+                </div>
+            </div>
+            
+            <div class="question">
+                <p class="question-text"><strong>Q3:</strong> A third sample question to show the exam layout.</p>
+                <div class="options">
+                    <label><input type="radio" name="q3" value="a"> Option A</label>
+                    <label><input type="radio" name="q3" value="b"> Option B</label>
+                    <label><input type="radio" name="q3" value="c"> Option C</label>
+                    <label><input type="radio" name="q3" value="d"> Option D</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Submit Button -->
+    <form method="POST" action="{{ url_for('submit_exam') }}" class="submit-form" id="exam-form">
+        <button type="submit" class="btn btn-danger btn-large">Submit Exam</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/exam.js') }}"></script>
+{% endblock %}

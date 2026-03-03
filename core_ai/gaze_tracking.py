@@ -12,11 +12,11 @@ class GazeTracking(object):
 
     def __init__(
         self,
-        smoothing_window=4,
+        smoothing_window=5,
         min_stable_frames=3,
         min_face_width=120,
         horizontal_thresh=0.05,
-        vertical_thresh=0.01,   # Updated default
+        vertical_thresh=0.02,   # Updated default
     ):
         self.frame = None
         self.eye_left = None
@@ -184,30 +184,29 @@ class GazeTracking(object):
         dy = vr - self.center_vr
 
         # -----------------------------
-        # Binary Center vs Away with Hysteresis
+        # Use constructor thresholds
         # -----------------------------
 
-        ENTER_H = 0.035   # must exceed to enter AWAY
-        ENTER_V = 0.02
+        ENTER_H = self._h_thresh
+        ENTER_V = self._v_thresh
 
-        EXIT_H = 0.025     # must fall below to return to CENTER
-        EXIT_V = 0.015
+        # Hysteresis band (50% of enter threshold)
+        EXIT_H = ENTER_H * 0.6
+        EXIT_V = ENTER_V * 0.6
 
         if self._current_state == "LOOKING_AWAY":
-            # Stay AWAY until clearly inside center zone
             if abs(dx) < EXIT_H and abs(dy) < EXIT_V:
                 new_state = "LOOKING_CENTER"
             else:
                 new_state = "LOOKING_AWAY"
         else:
-            # Currently CENTER
             if abs(dx) > ENTER_H or abs(dy) > ENTER_V:
                 new_state = "LOOKING_AWAY"
             else:
                 new_state = "LOOKING_CENTER"
 
         # -----------------------------
-        # Stability Filtering
+        # Stability filtering
         # -----------------------------
 
         if new_state != self._current_state:
@@ -224,7 +223,5 @@ class GazeTracking(object):
         else:
             self._candidate_state = None
             self._candidate_count = 0
-
-        print(f"dx: {dx:.4f}, dy: {dy:.4f}, STATE: {self._current_state}")
 
         return self._current_state

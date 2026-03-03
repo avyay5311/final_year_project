@@ -1,0 +1,65 @@
+<!-- templates/capture_face.html -->
+<!-- Face capture page during registration -->
+{% extends 'base.html' %}
+
+{% block title %}Face Registration - Exam Proctoring{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h1>Face Registration</h1>
+    
+    {% if error %}
+    <div class="error-message">{{ error }}</div>
+    {% endif %}
+    
+    <div class="video-preview">
+        <img id="camera-preview" src="{{ url_for('registration_video_feed') }}" alt="Camera Preview" class="camera-feed">
+    </div>
+    
+    <div class="instructions">
+        <h3>Instructions:</h3>
+        <ul>
+            <li>Ensure good lighting on your face</li>
+            <li>Look directly at the camera</li>
+            <li>Keep only your face in the frame</li>
+            <li>Remove glasses if possible</li>
+            <li>Stay still during capture</li>
+        </ul>
+    </div>
+    
+    <div class="capture-info">
+        <p>The system will capture your face to create a secure identity profile.</p>
+    </div>
+    
+    <form method="POST" action="{{ url_for('capture_face') }}" onsubmit="stopCamera()">
+        <button type="submit" class="btn btn-primary btn-large">Start Face Capture</button>
+    </form>
+    
+    <p class="auth-link">
+        <a href="{{ url_for('register') }}" onclick="stopCamera()">Back to Registration</a>
+    </p>
+</div>
+
+<style>
+.video-preview {
+    margin: 20px 0;
+    text-align: center;
+}
+.camera-feed {
+    max-width: 480px;
+    width: 100%;
+    border-radius: 8px;
+    border: 3px solid #4a90d9;
+}
+</style>
+
+<script>
+function stopCamera() {
+    const cameraImg = document.getElementById('camera-preview');
+    if (cameraImg) {
+        cameraImg.src = '';
+    }
+}
+window.addEventListener('beforeunload', stopCamera);
+</script>
+{% endblock %}

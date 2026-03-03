@@ -1,0 +1,54 @@
+<!-- templates/result.html -->
+<!-- Exam result and integrity report page -->
+{% extends 'base.html' %}
+
+{% block title %}Exam Result - Proctoring Report{% endblock %}
+
+{% block content %}
+<div class="result-container">
+    <h1>Exam Completed</h1>
+    <h2>Integrity Report for {{ username }}</h2>
+    
+    <!-- Score Display -->
+    <div class="score-display {{ risk_level|lower }}">
+        <div class="score-circle">
+            <span class="score-value">{{ integrity_score }}</span>
+            <span class="score-label">/ 100</span>
+        </div>
+        <div class="risk-level">
+            Risk Level: <strong>{{ risk_level }}</strong>
+        </div>
+    </div>
+    
+    <!-- Score Explanation -->
+    <div class="score-explanation">
+        {% if risk_level == 'LOW' %}
+        <p class="explanation-text good">Excellent! No significant integrity concerns detected.</p>
+        {% elif risk_level == 'MEDIUM' %}
+        <p class="explanation-text warning">Some behavioral patterns were flagged for review.</p>
+        {% else %}
+        <p class="explanation-text danger">Multiple integrity concerns detected. Manual review recommended.</p>
+        {% endif %}
+    </div>
+    
+    <!-- Reasons -->
+    <div class="reasons-section">
+        <h3>Analysis Details:</h3>
+        {% if reasons %}
+        <ul class="reasons-list">
+            {% for reason in reasons %}
+            <li>{{ reason }}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="no-issues">No issues detected during the exam. Great job!</p>
+        {% endif %}
+    </div>
+    
+    <!-- Actions -->
+    <div class="result-actions">
+        <a href="{{ url_for('calibration') }}" class="btn btn-primary">Take Another Exam</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+    </div>
+</div>
+{% endblock %}
