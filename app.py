@@ -30,6 +30,7 @@ from services import (
     get_video_frame,
     get_identity_status,
     run_integrity_engine,
+    start_session,
     calibrate_gaze,
     calibration_exists
 )
@@ -340,6 +341,9 @@ def exam():
     exam_session_id = db_helper.create_exam_session(candidate_id)
     session['exam_session_id'] = exam_session_id
     
+    # Start session timing for integrity engine
+    start_session()
+    
     # Start proctoring using exam service
     success, message = start_exam_proctoring(candidate_id)
     if not success:
@@ -427,11 +431,30 @@ def result():
     if report is None:
         return render_template('error.html', error="Report not found")
     
+    # Extract human-readable reasons from flags
+    report_data = report['report_json']
+    flags = report_data.get('flags', [])
+    
+    # Convert flags to readable reasons (show top 10)
+    reasons = []
+    for flag in flags[:10]:
+        flag_type = flag.get('type', 'Unknown')
+        severity = flag.get('severity', '')
+        duration = flag.get('duration')
+        
+        # Format the reason string
+        reason = f"[{severity}] {flag_type.replace('_', ' ').title()}"
+        if duration:
+            reason += f" ({duration:.1f}s)"
+        reasons.append(reason)
+    
     return render_template('result.html',
                          username=session.get('username'),
                          integrity_score=report['integrity_score'],
                          risk_level=report['risk_level'],
-                         reasons=report['report_json'].get('reasons', []))
+                         reasons=reasons,
+                         channel_penalties=report_data.get('channel_penalties', {}),
+                         flag_summary=report_data.get('flag_summary', {}))
 
 
 # -------------------------------------------------

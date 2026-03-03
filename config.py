@@ -39,10 +39,10 @@ class Config:
     GAZE_SMOOTHING_WINDOW = 5
     GAZE_MIN_STABLE_FRAMES = 3
     
-    # HeadPose thresholds
+    # HeadPose thresholds (matching test_primary_face.py)
     HEADPOSE_YAW_THRESH = 8.0
     HEADPOSE_PITCH_THRESH = 8.0
-    HEADPOSE_HYSTERESIS = 2.0
+    HEADPOSE_HYSTERESIS = 1.0
     HEADPOSE_SMOOTHING_WINDOW = 4
     HEADPOSE_MIN_STABLE_FRAMES = 3
     
@@ -50,11 +50,20 @@ class Config:
     BLINK_EAR_THRESHOLD = 0.21
     BLINK_CONSEC_FRAMES = 2
     
-    # Mouth detection thresholds (matching test_primary_face.py)
-    MOUTH_MOVEMENT_THRESHOLD = 0.015
-    MOUTH_SMOOTHING_WINDOW = 4
-    MOUTH_DELTA_WINDOW = 5
-    MOUTH_MIN_STABLE_FRAMES = 3
+    # MouthTracker thresholds (matching test_primary_face.py)
+    MOUTH_CLOSED_THRESHOLD = 0.014
+    MOUTH_MOVING_THRESHOLD = 0.018
+    MOUTH_OPEN_THRESHOLD = 0.070
+    MOUTH_MOVEMENT_DELTA = 0.012
+    MOUTH_SMOOTHING_WINDOW = 5
+    MOUTH_DELTA_WINDOW = 4
+    MOUTH_MIN_STABLE_FRAMES = 4
+    
+    # MouthChannel thresholds (matching test_primary_face.py)
+    MOUTH_SUSTAINED_THRESHOLD = 3.0
+    MOUTH_RAPID_THRESHOLD = 1.5
+    MOUTH_BURST_WINDOW = 15.0
+    MOUTH_BURST_MIN_EVENTS = 3
     
     # Verification threshold (more lenient for single-frame verification)
     IDENTITY_VERIFICATION_THRESHOLD = 0.85
