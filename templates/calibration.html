@@ -1,0 +1,238 @@
+<!-- templates/calibration.html -->
+<!-- Pre-exam calibration page -->
+{% extends 'base.html' %}
+
+{% block title %}Calibration - Exam Proctoring{% endblock %}
+
+{% block content %}
+<div class="calibration-container">
+    <h1>Welcome, {{ username }}!</h1>
+    <h2>Pre-Exam Calibration</h2>
+    
+    <div class="video-preview">
+        <img id="camera-preview" src="{{ url_for('calibration_video_feed') }}" alt="Camera Preview" class="camera-feed">
+    </div>
+    
+    <div class="instructions">
+        <h3>Before starting the exam:</h3>
+        <ul>
+            <li>Ensure your webcam is working properly</li>
+            <li>Position yourself in front of the camera</li>
+            <li>Ensure adequate lighting on your face</li>
+            <li>Complete both verification steps below</li>
+        </ul>
+    </div>
+    
+    <!-- Step 1: Identity Verification -->
+    <div class="calibration-step" id="step1">
+        <h4>Step 1: Identity Verification</h4>
+        <div class="step-status">
+            <span class="step-icon" id="identity-icon">⏸️</span>
+            <span id="identity-message">Click to verify your identity</span>
+        </div>
+        <button type="button" class="btn btn-secondary" id="verify-btn" onclick="verifyIdentity()">
+            Verify Identity
+        </button>
+    </div>
+    
+    <!-- Step 2: Gaze Calibration -->
+    <div class="calibration-step" id="step2">
+        <h4>Step 2: Gaze Calibration</h4>
+        <div class="step-status">
+            <span class="step-icon" id="gaze-icon">⏸️</span>
+            <span id="gaze-message">Complete Step 1 first</span>
+        </div>
+        <button type="button" class="btn btn-secondary" id="calibrate-btn" onclick="calibrateGaze()" disabled>
+            Calibrate Gaze
+        </button>
+    </div>
+    
+    <!-- Start Exam -->
+    <div class="action-buttons">
+        <form method="POST" action="{{ url_for('calibration') }}" id="start-form" style="display: inline;">
+            <button type="submit" class="btn btn-primary btn-large" id="start-btn" disabled onclick="stopCamera()">
+                Start Exam
+            </button>
+        </form>
+    </div>
+    
+    <p class="logout-link"><a href="{{ url_for('logout') }}" id="logout-link" onclick="stopCamera()">Logout</a></p>
+</div>
+
+<style>
+.video-preview {
+    margin: 20px 0;
+    text-align: center;
+}
+.camera-feed {
+    max-width: 480px;
+    width: 100%;
+    border-radius: 8px;
+    border: 3px solid #4a90d9;
+}
+.calibration-step {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    text-align: center;
+}
+.calibration-step h4 {
+    margin-bottom: 10px;
+    color: #333;
+}
+.step-status {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.step-icon {
+    font-size: 1.5rem;
+}
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.status-verified {
+    color: #28a745;
+}
+.status-failed {
+    color: #dc3545;
+}
+.step-complete {
+    border: 2px solid #28a745;
+}
+</style>
+
+<script>
+let identityVerified = false;
+let gazeCalibrated = false;
+
+// Stop the camera feed before navigating away
+function stopCamera() {
+    const cameraImg = document.getElementById('camera-preview');
+    if (cameraImg) {
+        cameraImg.src = '';
+    }
+}
+
+window.addEventListener('beforeunload', stopCamera);
+
+function checkAllComplete() {
+    const startBtn = document.getElementById('start-btn');
+    if (identityVerified && gazeCalibrated) {
+        startBtn.disabled = false;
+    }
+}
+
+function verifyIdentity() {
+    const btn = document.getElementById('verify-btn');
+    const icon = document.getElementById('identity-icon');
+    const message = document.getElementById('identity-message');
+    const calibrateBtn = document.getElementById('calibrate-btn');
+    const gazeMessage = document.getElementById('gaze-message');
+    const step1 = document.getElementById('step1');
+    
+    btn.disabled = true;
+    btn.textContent = 'Verifying...';
+    icon.textContent = '⏳';
+    message.textContent = 'Verifying your identity... Look at the camera.';
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    fetch('/verify_identity_check', { signal: controller.signal })
+        .then(response => {
+            clearTimeout(timeoutId);
+            return response.json();
+        })
+        .then(data => {
+            if (data.verified) {
+                icon.textContent = '✅';
+                message.textContent = 'Identity verified!';
+                btn.textContent = 'Verified';
+                step1.classList.add('step-complete');
+                identityVerified = true;
+                
+                // Enable step 2
+                calibrateBtn.disabled = false;
+                gazeMessage.textContent = 'Look at the CENTER of the screen and click Calibrate';
+                
+                checkAllComplete();
+            } else {
+                icon.textContent = '❌';
+                message.textContent = data.message || 'Verification failed';
+                btn.disabled = false;
+                btn.textContent = 'Retry';
+            }
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            icon.textContent = '❌';
+            if (error.name === 'AbortError') {
+                message.textContent = 'Timed out. Ensure face is visible.';
+            } else {
+                message.textContent = 'Error: ' + error.message;
+            }
+            btn.disabled = false;
+            btn.textContent = 'Retry';
+        });
+}
+
+function calibrateGaze() {
+    const btn = document.getElementById('calibrate-btn');
+    const icon = document.getElementById('gaze-icon');
+    const message = document.getElementById('gaze-message');
+    const step2 = document.getElementById('step2');
+    
+    btn.disabled = true;
+    btn.textContent = 'Calibrating...';
+    icon.textContent = '⏳';
+    message.textContent = 'Look at the CENTER of the screen... Hold steady...';
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    fetch('/calibrate_gaze_check', { signal: controller.signal })
+        .then(response => {
+            clearTimeout(timeoutId);
+            return response.json();
+        })
+        .then(data => {
+            if (data.calibrated) {
+                icon.textContent = '✅';
+                message.textContent = 'Gaze calibrated!';
+                btn.textContent = 'Calibrated';
+                step2.classList.add('step-complete');
+                gazeCalibrated = true;
+                
+                checkAllComplete();
+            } else {
+                icon.textContent = '❌';
+                message.textContent = data.message || 'Calibration failed';
+                btn.disabled = false;
+                btn.textContent = 'Retry';
+            }
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            icon.textContent = '❌';
+            if (error.name === 'AbortError') {
+                message.textContent = 'Timed out. Look at center and retry.';
+            } else {
+                message.textContent = 'Error: ' + error.message;
+            }
+            btn.disabled = false;
+            btn.textContent = 'Retry';
+        });
+}
+</script>
+{% endblock %}

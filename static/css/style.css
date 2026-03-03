@@ -1,0 +1,647 @@
+/* static/css/style.css */
+/* Exam Proctoring System Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* -------------------------------------------------
+   Authentication Pages
+   ------------------------------------------------- */
+
+.auth-container {
+    max-width: 400px;
+    margin: 80px auto;
+    padding: 40px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.auth-container h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #2c3e50;
+    font-size: 28px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/* -------------------------------------------------
+   Buttons
+   ------------------------------------------------- */
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.btn-large {
+    padding: 15px 40px;
+    font-size: 18px;
+}
+
+/* -------------------------------------------------
+   Messages
+   ------------------------------------------------- */
+
+.error-message {
+    background-color: #fdecea;
+    color: #c0392b;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    border-left: 4px solid #e74c3c;
+}
+
+.success-message {
+    background-color: #e8f8f5;
+    color: #27ae60;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    border-left: 4px solid #27ae60;
+}
+
+.auth-link {
+    text-align: center;
+    margin-top: 25px;
+    color: #777;
+}
+
+.auth-link a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-link a:hover {
+    text-decoration: underline;
+}
+
+/* -------------------------------------------------
+   Instructions Box
+   ------------------------------------------------- */
+
+.instructions {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border-left: 4px solid #3498db;
+}
+
+.instructions h3 {
+    margin-bottom: 12px;
+    color: #2c3e50;
+}
+
+.instructions ul {
+    padding-left: 20px;
+}
+
+.instructions li {
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.capture-info {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #666;
+}
+
+/* -------------------------------------------------
+   Calibration Page
+   ------------------------------------------------- */
+
+.calibration-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 40px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.calibration-container h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.calibration-container h2 {
+    color: #7f8c8d;
+    margin-bottom: 30px;
+    font-weight: normal;
+    font-size: 18px;
+}
+
+.calibration-status {
+    margin: 30px 0;
+    padding: 20px;
+    background: #e8f8f5;
+    border-radius: 8px;
+}
+
+.status-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.logout-link {
+    margin-top: 20px;
+}
+
+.logout-link a {
+    color: #95a5a6;
+    text-decoration: none;
+}
+
+.logout-link a:hover {
+    color: #e74c3c;
+}
+
+/* -------------------------------------------------
+   Exam Page
+   ------------------------------------------------- */
+
+.exam-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 20px;
+}
+
+.warning-bar {
+    background-color: #e74c3c;
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+    font-weight: bold;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    animation: pulse 1.5s infinite;
+    font-size: 16px;
+}
+
+.warning-bar.hidden {
+    display: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+.exam-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.exam-header h1 {
+    font-size: 24px;
+    color: #2c3e50;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.proctoring-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #e74c3c;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.username {
+    color: #666;
+    font-weight: 500;
+}
+
+.exam-content {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+}
+
+.camera-widget {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+}
+
+.camera-widget h3 {
+    margin-bottom: 12px;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.camera-widget img {
+    width: 100%;
+    border-radius: 8px;
+    border: 3px solid #3498db;
+}
+
+.camera-status {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #27ae60;
+    font-weight: 600;
+}
+
+.identity-status {
+    text-align: center;
+    margin-top: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.identity-indicator {
+    font-size: 14px;
+    color: #f39c12; /* Default: verifying */
+}
+
+#identity-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+}
+
+.exam-questions {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.exam-questions h2 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.exam-instructions {
+    color: #666;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.question {
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.question:last-child {
+    border-bottom: none;
+}
+
+.question-text {
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #333;
+}
+
+.options label {
+    display: block;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.options label:hover {
+    background: #e9ecef;
+    border-color: #3498db;
+}
+
+.options input[type="radio"] {
+    margin-right: 10px;
+}
+
+.submit-form {
+    margin-top: 30px;
+    text-align: center;
+}
+
+/* -------------------------------------------------
+   Result Page
+   ------------------------------------------------- */
+
+.result-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 40px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.result-container h1 {
+    color: #27ae60;
+    margin-bottom: 10px;
+    font-size: 32px;
+}
+
+.result-container h2 {
+    color: #7f8c8d;
+    margin-bottom: 30px;
+    font-weight: normal;
+    font-size: 18px;
+}
+
+.score-display {
+    margin: 30px 0;
+    padding: 30px;
+    border-radius: 12px;
+}
+
+.score-display.low {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+}
+
+.score-display.medium {
+    background: linear-gradient(135deg, #fff3cd, #ffeeba);
+}
+
+.score-display.high {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+}
+
+.score-circle {
+    margin-bottom: 15px;
+}
+
+.score-value {
+    font-size: 72px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.score-label {
+    font-size: 24px;
+    color: #7f8c8d;
+}
+
+.risk-level {
+    font-size: 20px;
+    color: #555;
+}
+
+.score-explanation {
+    margin: 20px 0;
+}
+
+.explanation-text {
+    font-size: 16px;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.explanation-text.good {
+    background: #e8f8f5;
+    color: #27ae60;
+}
+
+.explanation-text.warning {
+    background: #fef9e7;
+    color: #f39c12;
+}
+
+.explanation-text.danger {
+    background: #fdecea;
+    color: #e74c3c;
+}
+
+.reasons-section {
+    text-align: left;
+    margin: 30px 0;
+}
+
+.reasons-section h3 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+.reasons-list {
+    background: #f8f9fa;
+    padding: 20px 20px 20px 40px;
+    border-radius: 8px;
+    border-left: 4px solid #e74c3c;
+}
+
+.reasons-list li {
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.no-issues {
+    background: #e8f8f5;
+    color: #27ae60;
+    padding: 20px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.result-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.result-actions .btn {
+    width: auto;
+    min-width: 150px;
+}
+
+/* -------------------------------------------------
+   Error Page
+   ------------------------------------------------- */
+
+.error-container {
+    max-width: 500px;
+    margin: 100px auto;
+    padding: 40px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.error-icon {
+    font-size: 64px;
+    color: #e74c3c;
+    margin-bottom: 20px;
+}
+
+.error-container h1 {
+    color: #e74c3c;
+    margin-bottom: 20px;
+}
+
+.error-container .error-message {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #555;
+}
+
+.error-actions {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.error-actions .btn {
+    width: auto;
+}
+
+/* -------------------------------------------------
+   Responsive Design
+   ------------------------------------------------- */
+
+@media (max-width: 768px) {
+    .exam-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .camera-widget {
+        position: relative;
+        top: 0;
+    }
+    
+    .exam-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .result-actions,
+    .error-actions {
+        flex-direction: column;
+    }
+    
+    .result-actions .btn,
+    .error-actions .btn {
+        width: 100%;
+    }
+}
