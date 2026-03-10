@@ -26,6 +26,7 @@ from channels.gaze_channel import GazeChannel
 from channels.blink_channel import BlinkChannel
 from channels.headpose_channel import HeadPoseChannel
 from channels.mouth_channel import MouthChannel
+from channels.face_identity_channel import FaceIdentityChannel
 
 
 class ProctoringPipeline:
@@ -118,10 +119,10 @@ class ProctoringPipeline:
         
         # Mouth detection
         self.mouth_detector = MouthDetector(
-            movement_threshold=0.015,
-            smoothing_window=4,
-            delta_window=5,
-            min_stable_frames=3,
+            movement_threshold=Config.MOUTH_MOVEMENT_THRESHOLD,
+            smoothing_window=Config.MOUTH_SMOOTHING_WINDOW,
+            delta_window=Config.MOUTH_DELTA_WINDOW,
+            min_stable_frames=Config.MOUTH_MIN_STABLE_FRAMES,
             min_face_width=Config.MIN_FACE_WIDTH
         )
     
@@ -131,6 +132,7 @@ class ProctoringPipeline:
         self.blink_channel = BlinkChannel()
         self.headpose_channel = HeadPoseChannel()
         self.mouth_channel = MouthChannel()
+        self.face_identity_channel = FaceIdentityChannel()
     
     def _load_gaze_calibration(self):
         """Load pre-calibrated gaze data if available for the candidate."""
@@ -267,6 +269,7 @@ class ProctoringPipeline:
         self.blink_channel.update(blink_state, identity_valid)
         self.headpose_channel.update(headpose_state, identity_valid)
         self.mouth_channel.update(mouth_state, identity_valid)
+        self.face_identity_channel.update(identity_state)
         
         return {
             'identity_state': identity_state,
@@ -285,6 +288,7 @@ class ProctoringPipeline:
         self.blink_channel.finalize()
         self.headpose_channel.finalize()
         self.mouth_channel.finalize()
+        self.face_identity_channel.finalize()
     
     def get_channel_summaries(self):
         """Get summaries from all channels."""
@@ -292,7 +296,8 @@ class ProctoringPipeline:
             'gaze': self.gaze_channel.get_summary(),
             'blink': self.blink_channel.get_summary(),
             'headpose': self.headpose_channel.get_summary(),
-            'mouth': self.mouth_channel.get_summary()
+            'mouth': self.mouth_channel.get_summary(),
+            'face_identity': self.face_identity_channel.get_summary()
         }
     
     def start_gaze_calibration(self, duration_sec=1.0):

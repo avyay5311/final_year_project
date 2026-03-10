@@ -11,10 +11,10 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key-change-in-production'
     
     # Database settings
-    DB_HOST = "localhost"
-    DB_USER = "root"
-    DB_PASSWORD = "Avyay5311@"
-    DB_NAME = "quizo"
+    DB_HOST = os.environ.get('DB_HOST', 'localhost')
+    DB_USER = os.environ.get('DB_USER', 'root')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
+    DB_NAME = os.environ.get('DB_NAME', 'quizo')
     
     # Paths
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
