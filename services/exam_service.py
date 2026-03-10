@@ -30,6 +30,9 @@ class ExamProctor:
         self.identity_valid = False
         self.identity_lock = threading.Lock()
         
+        # Session timing
+        self.session_start_time = None
+        
         # Initialize the shared pipeline
         self.pipeline = ProctoringPipeline(candidate_id=candidate_id)
     
@@ -42,6 +45,7 @@ class ExamProctor:
             return False, "Could not access camera"
         
         self.is_running = True
+        self.session_start_time = time.time()
         self.processing_thread = threading.Thread(target=self._processing_loop, daemon=True)
         self.processing_thread.start()
         
@@ -58,30 +62,36 @@ class ExamProctor:
     def _processing_loop(self):
         """Main processing loop - runs in background thread."""
         
-        while self.is_running:
-            frame = camera.read_frame()
-            if frame is None:
-                time.sleep(0.01)
-                continue
-            
-            # Process frame through the shared pipeline
-            result = self.pipeline.process_frame(frame)
-            
-            # Store current frame for video feed
-            with self.frame_lock:
-                self.current_frame = frame.copy()
-            
-            # Store warnings
-            if result['warnings']:
-                with self.warnings_lock:
-                    self.warnings = result['warnings']
-            else:
-                with self.warnings_lock:
-                    self.warnings = []
-            
-            # Store identity status
-            with self.identity_lock:
-                self.identity_valid = result['identity_valid']
+        try:
+            while self.is_running:
+                frame = camera.read_frame()
+                if frame is None:
+                    time.sleep(0.01)
+                    continue
+                
+                # Process frame through the shared pipeline
+                result = self.pipeline.process_frame(frame)
+                
+                # Store current frame for video feed
+                with self.frame_lock:
+                    self.current_frame = frame.copy()
+                
+                # Store warnings
+                if result['warnings']:
+                    with self.warnings_lock:
+                        self.warnings = result['warnings']
+                else:
+                    with self.warnings_lock:
+                        self.warnings = []
+                
+                # Store identity status
+                with self.identity_lock:
+                    self.identity_valid = result['identity_valid']
+        except Exception as e:
+            print(f"Processing loop error: {e}")
+        finally:
+            # Ensure is_running is False so stop() doesn't hang
+            self.is_running = False
     
     def get_warnings(self):
         """Get current warnings (thread-safe)."""
@@ -103,6 +113,18 @@ class ExamProctor:
     def finalize(self):
         """Finalize channels and save summaries."""
         
+        # Calculate session duration with floor and cap
+        if self.session_start_time is not None:
+            session_duration = time.time() - self.session_start_time
+        else:
+            session_duration = Config.EXAM_DURATION
+        
+        # Apply floor and cap
+        session_duration = max(
+            Config.MIN_SESSION_DURATION,
+            min(session_duration, Config.EXAM_DURATION)
+        )
+        
         # Finalize all channels via pipeline
         self.pipeline.finalize_channels()
         
@@ -111,6 +133,10 @@ class ExamProctor:
         
         # Save summaries to files
         Config.init_directories()
+        
+        # Save session duration for integrity engine
+        with open(os.path.join(Config.SUMMARIES_DIR, "session_duration.json"), "w") as f:
+            json.dump({"session_duration": session_duration}, f, indent=4)
         
         with open(os.path.join(Config.SUMMARIES_DIR, "gaze_summary.json"), "w") as f:
             json.dump(summaries['gaze'], f, indent=4)

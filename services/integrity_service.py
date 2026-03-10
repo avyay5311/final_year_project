@@ -4,23 +4,27 @@
 import os
 import json
 import uuid
-import time
 
 from config import Config
 from integrity_engine.integrity_engine import IntegrityEngine
 
 
-# Track session start time (set when exam starts)
-_session_start_time = None
-_session_id = None
-
-
-def start_session():
-    """Call when exam session starts to track timing."""
-    global _session_start_time, _session_id
-    _session_start_time = time.time()
-    _session_id = f"session_{uuid.uuid4().hex[:8]}"
-    return _session_id
+def _load_summary(filename):
+    """
+    Safely load a summary JSON file.
+    Returns empty dict if file doesn't exist or is corrupted.
+    """
+    path = os.path.join(Config.SUMMARIES_DIR, filename)
+    if os.path.exists(path):
+        try:
+            with open(path, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            print(f"Warning: Could not load {filename}, using empty fallback")
+            return {}
+    else:
+        print(f"Warning: {filename} not found, using empty fallback")
+        return {}
 
 
 def run_integrity_engine():
@@ -30,40 +34,31 @@ def run_integrity_engine():
     Returns:
         dict: Integrity report with score, risk_level, flags, etc.
     """
-    global _session_start_time, _session_id
     
-    # Calculate session duration
-    if _session_start_time is not None:
-        session_duration = time.time() - _session_start_time
-    else:
-        session_duration = 0.0
+    # Load all summaries with safe fallback
+    gaze_summary = _load_summary("gaze_summary.json")
+    blink_summary = _load_summary("blink_summary.json")
+    headpose_summary = _load_summary("headpose_summary.json")
+    mouth_summary = _load_summary("mouth_summary.json")
+    face_identity_summary = _load_summary("face_identity_summary.json")
     
-    # Use stored session_id or generate one
-    if _session_id is None:
-        _session_id = f"session_{uuid.uuid4().hex[:8]}"
+    # Load session duration from file (written by exam_service)
+    duration_data = _load_summary("session_duration.json")
+    session_duration = duration_data.get("session_duration", Config.EXAM_DURATION)
     
-    # Load summaries from files
-    summaries_dir = Config.SUMMARIES_DIR
+    # Apply floor and cap
+    session_duration = max(
+        Config.MIN_SESSION_DURATION,
+        min(session_duration, Config.EXAM_DURATION)
+    )
     
-    with open(os.path.join(summaries_dir, "gaze_summary.json"), "r") as f:
-        gaze_summary = json.load(f)
+    # Generate session ID
+    session_id = f"session_{uuid.uuid4().hex[:8]}"
     
-    with open(os.path.join(summaries_dir, "blink_summary.json"), "r") as f:
-        blink_summary = json.load(f)
-    
-    with open(os.path.join(summaries_dir, "headpose_summary.json"), "r") as f:
-        headpose_summary = json.load(f)
-    
-    with open(os.path.join(summaries_dir, "mouth_summary.json"), "r") as f:
-        mouth_summary = json.load(f)
-    
-    with open(os.path.join(summaries_dir, "face_identity_summary.json"), "r") as f:
-        face_identity_summary = json.load(f)
-    
-    # Run integrity engine with correct API
+    # Run integrity engine
     engine = IntegrityEngine()
     report = engine.run(
-        session_id=_session_id,
+        session_id=session_id,
         session_duration=session_duration,
         gaze_summary=gaze_summary,
         headpose_summary=headpose_summary,
@@ -72,6 +67,7 @@ def run_integrity_engine():
         face_identity_summary=face_identity_summary
     )
     
+    # Print summary to console
     print(f"\n{'='*55}")
     print(f"  INTEGRITY REPORT")
     print(f"{'='*55}")
@@ -82,9 +78,5 @@ def run_integrity_engine():
     print(f"  Hard Cap        : {report['hard_cap_applied']}")
     print(f"  Total Flags     : {report['flag_summary']['total_flags']}")
     print(f"{'='*55}")
-    
-    # Reset session tracking
-    _session_start_time = None
-    _session_id = None
     
     return report

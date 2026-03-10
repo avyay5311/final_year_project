@@ -30,7 +30,7 @@ from services import (
     get_video_frame,
     get_identity_status,
     run_integrity_engine,
-    start_session,
+
     calibrate_gaze,
     calibration_exists
 )
@@ -339,10 +339,12 @@ def exam():
     # Create exam session in database
     candidate_id = session.get('candidate_id')
     exam_session_id = db_helper.create_exam_session(candidate_id)
-    session['exam_session_id'] = exam_session_id
     
-    # Start session timing for integrity engine
-    start_session()
+    if exam_session_id is None:
+        return render_template('error.html', error="Failed to create exam session. Please try again.")
+    
+    session['exam_session_id'] = exam_session_id
+    print(f"Exam session created: {exam_session_id} for candidate: {candidate_id}")
     
     # Start proctoring using exam service
     success, message = start_exam_proctoring(candidate_id)
@@ -398,21 +400,35 @@ def submit_exam():
     global warning_thread_running
     warning_thread_running = False
     
+    # Get session_id early and validate
+    session_id = session.get('exam_session_id')
+    if session_id is None:
+        print("ERROR: exam_session_id is None in submit_exam")
+        return render_template('error.html', error="No active exam session found. Please start an exam first.")
+    
+    print(f"Submitting exam for session: {session_id}")
+    
     # Stop proctoring using exam service
-    stop_exam_proctoring()
+    stopped, stop_msg = stop_exam_proctoring()
+    print(f"Stop proctoring: {stopped} - {stop_msg}")
     
     # Run integrity engine
     report = run_integrity_engine()
     
     # Save to database
-    session_id = session.get('exam_session_id')
     db_helper.end_exam_session(session_id, 'completed')
-    db_helper.save_integrity_report(
+    report_id = db_helper.save_integrity_report(
         session_id=session_id,
         integrity_score=report['integrity_score'],
         risk_level=report['risk_level'],
         report_json=report
     )
+    
+    if report_id is None:
+        print(f"ERROR: Failed to save integrity report for session {session_id}")
+        return render_template('error.html', error="Failed to save integrity report.")
+    
+    print(f"Integrity report saved with ID: {report_id}")
     
     return redirect(url_for('result'))
 

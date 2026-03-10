@@ -22,6 +22,10 @@ class Config:
     SUMMARIES_DIR = os.path.join(BASE_DIR, "summaries")
     MODELS_DIR = os.path.join(BASE_DIR, "models")
     
+    # Exam duration settings
+    EXAM_DURATION = 5400          # 90 minutes in seconds — hard cap for session_duration
+    MIN_SESSION_DURATION = 300    # 5 minutes in seconds — fairness floor for session_duration
+    
     # AI Model paths
     DNN_PROTOTXT = os.path.join(MODELS_DIR, "dnn_face", "deploy.prototxt")
     DNN_CAFFEMODEL = os.path.join(MODELS_DIR, "dnn_face", "res10_300x300_ssd_iter_140000.caffemodel")
