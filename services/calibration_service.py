@@ -83,7 +83,7 @@ def save_calibration(candidate_id, center_hr, center_vr):
     return path
 
 
-def calibrate_gaze(candidate_id, duration_sec=2.0):
+def calibrate_gaze(candidate_id, duration_sec=4.0):
     """
     Perform gaze calibration for a candidate.
     User should be looking at the center of the screen.

@@ -20,12 +20,13 @@ from core_ai.landmark_detector import LandmarkDetector
 from core_ai.blink_detector import BlinkDetector, BlinkState
 from core_ai.gaze_tracking import GazeTracking
 from core_ai.headpose_detector import HeadPoseDetector, HeadPoseState
-from core_ai.mouth_detector import MouthDetector, MouthState
+from core_ai.mouth_tracker import MouthTracker, MouthState
 
 from channels.gaze_channel import GazeChannel
 from channels.blink_channel import BlinkChannel
 from channels.headpose_channel import HeadPoseChannel
 from channels.mouth_channel import MouthChannel
+from channels.face_identity_channel import FaceIdentityChannel
 
 
 class ProctoringPipeline:
@@ -116,12 +117,15 @@ class ProctoringPipeline:
             min_face_width=Config.MIN_FACE_WIDTH
         )
         
-        # Mouth detection
-        self.mouth_detector = MouthDetector(
-            movement_threshold=0.015,
-            smoothing_window=4,
-            delta_window=5,
-            min_stable_frames=3,
+        # Mouth tracking (MouthTracker with 3-zone MAR classification)
+        self.mouth_tracker = MouthTracker(
+            closed_threshold=Config.MOUTH_CLOSED_THRESHOLD,
+            moving_threshold=Config.MOUTH_MOVING_THRESHOLD,
+            open_threshold=Config.MOUTH_OPEN_THRESHOLD,
+            movement_delta=Config.MOUTH_MOVEMENT_DELTA,
+            smoothing_window=Config.MOUTH_SMOOTHING_WINDOW,
+            delta_window=Config.MOUTH_DELTA_WINDOW,
+            min_stable_frames=Config.MOUTH_MIN_STABLE_FRAMES,
             min_face_width=Config.MIN_FACE_WIDTH
         )
     
@@ -130,7 +134,13 @@ class ProctoringPipeline:
         self.gaze_channel = GazeChannel()
         self.blink_channel = BlinkChannel()
         self.headpose_channel = HeadPoseChannel()
-        self.mouth_channel = MouthChannel()
+        self.mouth_channel = MouthChannel(
+            sustained_threshold=Config.MOUTH_SUSTAINED_THRESHOLD,
+            rapid_threshold=Config.MOUTH_RAPID_THRESHOLD,
+            burst_window=Config.MOUTH_BURST_WINDOW,
+            burst_min_events=Config.MOUTH_BURST_MIN_EVENTS
+        )
+        self.face_identity_channel = FaceIdentityChannel()
     
     def _load_gaze_calibration(self):
         """Load pre-calibrated gaze data if available for the candidate."""
@@ -192,8 +202,14 @@ class ProctoringPipeline:
         gaze_label = "NO_PUPILS"
         blink_state = BlinkState.NO_BLINK
         headpose_state = HeadPoseState.HEAD_CENTER
-        mouth_state = MouthState.MOUTH_STILL
+        mouth_state = MouthState.MOUTH_CLOSED
         landmarks = None
+        
+        # -------------------------------------------------
+        # FaceIdentityChannel — updated every frame
+        # directly from identity_state (no identity_valid gate needed)
+        # -------------------------------------------------
+        self.face_identity_channel.update(identity_state)
         
         # -------------------------------------------------
         # Generate Warnings
@@ -240,9 +256,12 @@ class ProctoringPipeline:
                     frame_shape=frame.shape
                 )
                 
-                # Mouth detection
+                # Mouth tracking
                 if w >= Config.MIN_FACE_WIDTH:
-                    mouth_state = self.mouth_detector.update(landmarks, w)
+                    mouth_state = self.mouth_tracker.update(
+                        landmarks=landmarks,
+                        face_width=w
+                    )
         
         # -------------------------------------------------
         # Gaze Warning
@@ -285,6 +304,7 @@ class ProctoringPipeline:
         self.blink_channel.finalize()
         self.headpose_channel.finalize()
         self.mouth_channel.finalize()
+        self.face_identity_channel.finalize()
     
     def get_channel_summaries(self):
         """Get summaries from all channels."""
@@ -292,7 +312,8 @@ class ProctoringPipeline:
             'gaze': self.gaze_channel.get_summary(),
             'blink': self.blink_channel.get_summary(),
             'headpose': self.headpose_channel.get_summary(),
-            'mouth': self.mouth_channel.get_summary()
+            'mouth': self.mouth_channel.get_summary(),
+            'face_identity': self.face_identity_channel.get_summary()
         }
     
     def start_gaze_calibration(self, duration_sec=1.0):

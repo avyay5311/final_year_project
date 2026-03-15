@@ -34,7 +34,7 @@
     <!-- Reasons -->
     <div class="reasons-section">
         <h3>Analysis Details:</h3>
-        {% if reasons %}
+        {% if reasons and reasons|length > 0 %}
         <ul class="reasons-list">
             {% for reason in reasons %}
             <li>{{ reason }}</li>
@@ -44,6 +44,29 @@
         <p class="no-issues">No issues detected during the exam. Great job!</p>
         {% endif %}
     </div>
+    
+    <!-- Channel Penalties -->
+    {% if channel_penalties %}
+    <div class="penalties-section">
+        <h3>Channel Breakdown:</h3>
+        <ul class="penalties-list">
+            {% for channel, penalty in channel_penalties.items() %}
+            <li><strong>{{ channel|title }}:</strong> -{{ penalty }} points</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <!-- Flag Summary -->
+    {% if flag_summary and flag_summary.total_flags > 0 %}
+    <div class="flag-summary">
+        <p>Total Flags: {{ flag_summary.total_flags }} 
+        (Critical: {{ flag_summary.by_severity.get('CRITICAL', 0) }}, 
+         High: {{ flag_summary.by_severity.get('HIGH', 0) }}, 
+         Medium: {{ flag_summary.by_severity.get('MEDIUM', 0) }}, 
+         Low: {{ flag_summary.by_severity.get('LOW', 0) }})</p>
+    </div>
+    {% endif %}
     
     <!-- Actions -->
     <div class="result-actions">
