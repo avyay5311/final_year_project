@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="logo">ProctorAI</div>
+    <div class="nav-buttons">
+        <button class="login-btn" onclick="goToLogin();">Login</button>
+        <button class="register-btn" onclick="goToRegister();">Register</button>
+    </div>
+</div>
+
+<!-- HERO SECTION -->
+<div class="hero">
+    <div class="hero-text">
+        <h1>Secure & Smart Online Examination Platform</h1>
+        <p>Conduct reliable online assessments with AI-based monitoring, real-time analytics, and secure exam environments.</p>
+        <button onclick="goToRegister();">Get Started</button>
+    </div>
+
+    <div class="glass-card">
+        <h3>Platform Features</h3>
+        <div class="feature">✔ AI-Based Proctoring</div>
+        <div class="feature">✔ Tab Switch Detection</div>
+        <div class="feature">✔ Real-Time Monitoring</div>
+        <div class="feature">✔ Automated Result Generation</div>
+        <div class="feature">✔ Secure & Scalable</div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+    © 2026 ProctorAI | Designed for Secure Online Examinations
+</div>
+
+<!-- JavaScript Navigation Functions -->
+<script>
+    function goToLogin() {
+        window.location.href = "{{ url_for('login') }}";
+    }
+
+    function goToRegister() {
+        window.location.href = "{{ url_for('register') }}";
+    }
+</script>
+
+{% endblock %}
